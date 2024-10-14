@@ -5,6 +5,7 @@ namespace App\DataTables;
 use App\Services\LogAktivitasService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Laravel\Octane\Facades\Octane;
 
 class LogAktivitasDataTables
 {
@@ -48,7 +49,12 @@ class LogAktivitasDataTables
     $query->skip($start)->take($length);
 
     // Mengambil data
-    $data = $query->get();
+    // $data = $query->get();
+
+    // Octane concurrently
+    [$data] = Octane::concurrently([
+      fn() => $query->get(),
+    ]);
 
     // Format data untuk dikembalikan ke DataTables
     return [

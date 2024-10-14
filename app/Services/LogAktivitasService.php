@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use Laravel\Octane\Facades\Octane;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
@@ -11,24 +10,20 @@ class LogAktivitasService
   public function getLogAktiviasQuery()
   {
     try {
-      // Concurrently mengembalikan array dari setiap closure yang dijalankan
-      $result = Octane::concurrently([
-        fn() => DB::table('log_aktivitas')
-          ->leftJoin('users', 'users.id', '=', 'log_aktivitas.userId_log')
-          ->select(
-            'log_aktivitas.id_log',
-            'log_aktivitas.datetime_log',
-            'log_aktivitas.userId_log',
-            'users.name as nama_user',
-            'log_aktivitas.keterangan_log',
-            'log_aktivitas.endpoint_log',
-            'log_aktivitas.data_awal',
-            'log_aktivitas.data_akhir',
-          )
-      ]);
+      $query = DB::table("log_aktivitas")
+        ->leftJoin('users', 'users.id', '=', 'log_aktivitas.userId_log')
+        ->select(
+          'log_aktivitas.id_log',
+          'log_aktivitas.datetime_log',
+          'log_aktivitas.userId_log',
+          'users.name as nama_user',
+          'log_aktivitas.keterangan_log',
+          'log_aktivitas.endpoint_log',
+          'log_aktivitas.data_awal',
+          'log_aktivitas.data_akhir',
+        );
 
-      // Mengambil hasil dari array yang dikembalikan oleh concurrently
-      return $result[0]; // Ini akan mengembalikan collection dari query get()
+      return $query;
     } catch (Exception $e) {
       return ['status' => false, 'message' => 'Gagal mengambil data log aktivitas: ' . $e->getMessage()];
     }
