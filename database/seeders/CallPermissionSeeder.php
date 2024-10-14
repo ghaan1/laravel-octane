@@ -13,11 +13,10 @@ class CallPermissionSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        DB::table('permissions')->truncate();
-        DB::table('menu_group')->truncate();
-        DB::table('menu_item')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+        DB::statement('TRUNCATE TABLE permissions CASCADE;');
+        DB::statement('TRUNCATE TABLE menu_group CASCADE;');
+        DB::statement('TRUNCATE TABLE menu_item CASCADE;');
         $this->call([
             PermissionMenuSeeder::class,
             MenuGroupSeeder::class,
