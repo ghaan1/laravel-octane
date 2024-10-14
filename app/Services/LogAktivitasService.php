@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Exception;
+use Illuminate\Support\Benchmark;
 use Illuminate\Support\Facades\DB;
 
 class LogAktivitasService

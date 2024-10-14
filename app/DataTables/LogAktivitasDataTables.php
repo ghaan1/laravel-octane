@@ -18,51 +18,51 @@ class LogAktivitasDataTables
 
   public function getData(Request $request)
   {
+    // Prepare the base query
     $query = $this->logAktivitasService->getLogAktiviasQuery();
 
-    // Menerapkan pencarian jika ada input 'search'
+    // Apply search filter if provided
     if ($search = $request->input('search.value')) {
       $query = $this->logAktivitasService->searchLogAktivias($query, $search);
     }
 
-    // Hitung total record sebelum filtering
-    $totalRecords = $query->count();
+    // Get total record count (before filtering) concurrently
+    [$totalRecords, $filteredData] = Octane::concurrently([
+      fn() => $this->logAktivitasService->getLogAktiviasQuery()->count(), // Count before filtering
+      fn() => (clone $query)->count(),  // Count after filtering
+    ]);
 
-    // Order berdasarkan kolom yang dipilih
+    // Apply ordering
     if ($order = $request->input('order.0')) {
       $columnIndex = $order['column'];
       $columnName = $request->input("columns.{$columnIndex}.data");
       $direction = $order['dir'];
 
-      // Urutkan data berdasarkan kolom yang dipilih
+      // Order by the selected column, but skip 'iteration'
       if ($columnName != 'iteration') {
         $query->orderBy($columnName, $direction);
       }
     }
 
-    // Hitung total record setelah filtering
-    $totalFiltered = $query->count();
-
-    // Penerapan pagination
+    // Apply pagination
     $length = $request->input('length');
     $start = $request->input('start');
     $query->skip($start)->take($length);
 
-    // Mengambil data
-    // $data = $query->get();
-
-    // Octane concurrently
+    // Retrieve data concurrently
     [$data] = Octane::concurrently([
       fn() => $query->get(),
     ]);
 
-    // Format data untuk dikembalikan ke DataTables
+    // Set Carbon locale once
+    Carbon::setLocale('id');
+
+    // Format the data for DataTables
     return [
       'draw' => intval($request->input('draw')),
       'recordsTotal' => $totalRecords,
-      'recordsFiltered' => $totalFiltered,
+      'recordsFiltered' => $filteredData,
       'data' => $data->map(function ($log, $index) use ($start) {
-        Carbon::setLocale('id');
         return [
           'iteration' => $start + $index + 1,
           'id_log' => $log->id_log,
@@ -70,8 +70,8 @@ class LogAktivitasDataTables
           'nama_user' => $log->nama_user,
           'keterangan_log' => $log->keterangan_log,
           'endpoint_log' => $log->endpoint_log,
-          'data_awal' => json_decode($log->data_awal, true),  // Decode JSON ke array asosiatif
-          'data_akhir' => json_decode($log->data_akhir, true), // Decode JSON ke array asosiatif
+          'data_awal' => json_decode($log->data_awal, true), // Decode JSON to associative array
+          'data_akhir' => json_decode($log->data_akhir, true), // Decode JSON to associative array
         ];
       }),
     ];
